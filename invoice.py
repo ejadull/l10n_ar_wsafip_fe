@@ -35,43 +35,14 @@ def _get_parents(child, parents=[]):
     else:
         return parents
 
-def _calc_concept(product_types):
-    if product_types == set(['consu']):
-        concept = '1'
-    elif product_types == set(['service']):
-        concept = '2'
-    elif product_types == set(['consu','service']):
-        concept = '3'
-    else:
-        concept = False
-    return concept
-
 class invoice(osv.osv):
-    def _get_concept(self, cr, uid, ids, name, args, context=None):
-        r = {}
-        for inv in self.browse(cr, uid, ids):
-            concept = False
-            product_types = set([ line.product_id.type for line in inv.invoice_line ])
-            r[inv.id] = _calc_concept(product_types)
-        return r
-
     _inherit = "account.invoice"
     _columns = {
-        'afip_concept': fields.function(_get_concept,
-                                        type="selection",
-                                        selection=[('1','Consumible'),
-                                                   ('2','Service'),
-                                                   ('3','Mixted')],
-                                        method=True,
-                                        string="AFIP concept",
-                                        readonly=1),
         'afip_result': fields.selection([
             ('', 'No CAE'),
             ('A', 'Accepted'),
             ('R', 'Rejected'),
         ], 'Status', help='This state is asigned by the AFIP. If * No CAE * state mean you have no generate this invoice by '),
-        'afip_service_start': fields.date('Service Start Date'),
-        'afip_service_end': fields.date('Service End Date'),
         'afip_batch_number': fields.integer('Batch Number', readonly=True),
         'afip_cae': fields.char('CAE number', size=24),
         'afip_cae_due': fields.date('CAE due'),
@@ -302,22 +273,6 @@ class invoice(osv.osv):
             'datas': datas,
             'nodestroy' : True
         }
-
-    def onchange_invoice_line(self, cr, uid, ids, invoice_line):
-        '''
-        Set afip_concept by product type.
-        '''
-        product_obj = self.pool.get('product.product')
-        res = {}
-        product_types = set()
-
-        for act, opt, data in invoice_line:
-            product_id = data.get('product_id', False)
-            if product_id:
-                product_types.add(product_obj.read(cr, uid, product_id, ['type'])['type'])
-                
-        res['value'] = { 'afip_concept': _calc_concept(product_types) }
-        return res
 
 invoice()
 
