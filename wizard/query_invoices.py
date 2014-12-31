@@ -59,6 +59,7 @@ class query_invoices(osv.osv_memory):
         invoice_obj = self.pool.get('account.invoice')
         partner_obj = self.pool.get('res.partner')
         document_type_obj = self.pool.get('afip.document_type')
+        _ids = []
 
         for qi in self.browse(cr, uid, ids):
             conn = qi.journal_id.afip_connection_id
@@ -126,7 +127,7 @@ class query_invoices(osv.osv_memory):
                         if not partner.property_account_receivable.id:
                             raise osv.except_osv(_(u'Partner has not set a receivable account'), _('Please, first set the receivable account for %s') % partner.name)
 
-                        inv_id = invoice_obj.create(cr, uid, {
+                        _ids.append(invoice_obj.create(cr, uid, {
                             'company_id': qi.journal_id.company_id.id,
                             'account_id': partner.property_account_receivable.id,
                             'internal_number': number_format % inv_number,
@@ -140,8 +141,19 @@ class query_invoices(osv.osv_memory):
                             'afip_service_end': _fch_(r['FchServHasta']),
                             'amount_total': r['ImpTotal'],
                             'state': 'draft',
-                        })
+                        }))
                     else:
                         _logger.debug("Ignoring invoice: %s" % (number_format % inv_number))
+
+        return {
+            'name': _('Invoices'),
+            'domain': [('id', 'in', _ids)],
+            'res_model': 'account.invoice',
+            'type': 'ir.actions.act_window',
+            'view_id': False,
+            'view_mode': 'tree,form',
+            'view_type': 'form',
+            'limit': 80,
+        }
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
