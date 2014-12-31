@@ -89,7 +89,6 @@ class wsafip_server(osv.osv):
         AFIP Description: Recuperador de los puntos de venta asignados a Facturación Electrónica que soporten CAE y CAEA vía Web Services (FEParamGetPtosVenta)
         AFIP Description: Recuperador de cotización de moneda (FEParamGetCotizacion)
         AFIP Description: Recuperador de cantidad máxima de registros FECAESolicitar / FECAEARegInformativo (FECompTotXRequest)
-        AFIP Description: Método para consultar Comprobantes Emitidos y su código (FECompConsultar)
         """
 
     def wsfe_get_status(self, cr, uid, ids, conn_id, context=None):
@@ -111,6 +110,7 @@ class wsafip_server(osv.osv):
                 srvclient = Client(srv.url+'?WSDL', transport=HttpsTransport())
                 response = srvclient.service.FEDummy()
             except Exception as e:
+                _logger.error('AFIP Web service error!: (%i) %s' % (e[0], e[1]))
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error %i: %s') % (e[0], e[1]))
             r[srv.id] = (response.AuthServer,
@@ -150,6 +150,7 @@ class wsafip_server(osv.osv):
                      'active': ct.FchHasta in [None, 'NULL'] }
                     for ct in response.ResultGet.ConceptoTipo ]
             except Exception as e:
+                _logger.error('AFIP Web service error!: (%i) %s' % (e[0], e[1]))
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error %i: %s') % (e[0], e[1]))
 
@@ -194,6 +195,7 @@ class wsafip_server(osv.osv):
                     for c in response.ResultGet.CbteTipo
                 ]
             except Exception as e:
+                _logger.error('AFIP Web service error!: (%i) %s' % (e[0], e[1]))
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error %i: %s') % (e[0], e[1]))
 
@@ -238,6 +240,7 @@ class wsafip_server(osv.osv):
                     for c in response.ResultGet.DocTipo
                 ]
             except Exception as e:
+                _logger.error('AFIP Web service error!: (%i) %s' % (e[0], e[1]))
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error %i: %s') % (e[0], e[1]))
 
@@ -280,6 +283,7 @@ class wsafip_server(osv.osv):
                     for c in response.ResultGet.OpcionalTipo
                 ]
             except Exception as e:
+                _logger.error('AFIP Web service error!: (%i) %s' % (e[0], e[1]))
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error %i: %s') % (e[0], e[1]))
 
@@ -321,6 +325,7 @@ class wsafip_server(osv.osv):
                     for c in response.ResultGet.Moneda
                 ]
             except Exception as e:
+                _logger.error('AFIP Web service error!: (%i) %s' % (e[0], e[1]))
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error %i: %s') % (e[0], e[1]))
 
@@ -372,6 +377,7 @@ class wsafip_server(osv.osv):
                 ])
 
             except Exception as e:
+                _logger.error('AFIP Web service error!: (%i) %s' % (e[0], e[1]))
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error %i: %s') % (e[0], e[1]))
 
@@ -410,11 +416,12 @@ class wsafip_server(osv.osv):
                 continue
 
             try:
-                _logger.info('Take last invoice number from AFIP Web service')
+                _logger.info('Take last invoice number from AFIP Web service (pto vta: %s, cbte tipo: %s)' % (ptoVta, cbteTipo))
                 srvclient = Client(srv.url+'?WSDL', transport=HttpsTransport())
                 response = srvclient.service.FECompUltimoAutorizado(Auth=conn.get_auth(), PtoVta=ptoVta, CbteTipo=cbteTipo)
 
             except Exception as e:
+                _logger.error('AFIP Web service error!: (%i) %s' % (e[0], e[1]))
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error %i: %s\n'
                                        u'Pueda que esté intente realizar esta operación'
@@ -474,21 +481,25 @@ class wsafip_server(osv.osv):
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error: %s') % e[0])
             except Exception as e:
-                import pdb; pdb.set_trace()
                 _logger.error('AFIP Web service error!: (%i) %s' % (e[0], e[1]))
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error %i: %s') % (e[0], e[1]))
+                                     
+            soapRequest = [{ 'FeCabReq':{ 'CantReg': len(invoice_request), 'PtoVta': invoice_request[first]['PtoVta'], 'CbteTipo': invoice_request[first]['CbteTipo'],}, 'FeDetReq': [{ 'FECAEDetRequest': dict([ (k, v) for k,v in req.iteritems() if k not in ['CantReg', 'PtoVta', 'CbteTipo'] ] ) } for req in invoice_request.itervalues()], }]
+
+            common_error = [ (e.Code, unicode(e.Msg)) for e in response.Errors[0] ] if response.FeCabResp.Resultado in ["P", "R"] and hasattr(response, 'Errors') else []
+            _logger.error('Request error: %s' % (common_error,))
 
             for resp in response.FeDetResp.FECAEDetResponse:
                 if resp.Resultado == 'R':
                     # Existe Error!
-                    _logger.error('Rejected invoice: %s' % (resp,))
+                    _logger.error('Invoice error: %s' % (resp,))
                     r[int(resp.CbteDesde)]={
                         'CbteDesde': resp.CbteDesde,
                         'CbteHasta': resp.CbteHasta,
                         'Observaciones': [ (o.Code, unicode(o.Msg)) for o in resp.Observaciones.Obs ]
                                 if hasattr(resp,'Observaciones') else [],
-                        'Errores': [ (e.Code, unicode(e.Msg)) for e in response.Errors.Err ]
+                        'Errores': common_error + [ (e.Code, unicode(e.Msg)) for e in response.Errors.Err ]
                                 if hasattr(response, 'Errors') else [],
                     }
                 else:
@@ -498,9 +509,79 @@ class wsafip_server(osv.osv):
                         'CbteHasta': resp.CbteHasta,
                         'CAE': resp.CAE,
                         'CAEFchVto': resp.CAEFchVto,
+                        'Request': soapRequest,
+                        'Response': response,
                     }
         return r
 
+    def wsfe_query_invoice(self, cr, uid, ids, conn_id, cbteTipo, cbteNro, ptoVta, context=None):
+        """
+        Query for invoice stored by AFIP Web service.
+
+        AFIP Description: Método para consultar Comprobantes Emitidos y su código (FECompConsultar)
+        """
+        conn_obj = self.pool.get('wsafip.connection')
+        r = {}
+
+        for srv in self.browse(cr, uid, ids, context=context):
+            # Ignore servers without code WSFE.
+            if srv.code != 'wsfe': continue
+
+            # Take the connection
+            conn = conn_obj.browse(cr, uid, conn_id, context=context) 
+            conn.login() # Login if nescesary.
+
+            try:
+                _logger.info('Query for invoice stored by AFIP Web service')
+                srvclient = Client(srv.url+'?WSDL', transport=HttpsTransport())
+                response = srvclient.service.FECompConsultar(Auth=conn.get_auth(),
+                                                                 FeCompConsReq={
+                                                                     'CbteTipo': cbteTipo,
+                                                                     'CbteNro': cbteNro,
+                                                                     'PtoVta': ptoVta,
+                                                                 })
+            except Exception as e:
+                _logger.error('AFIP Web service error!: (%i) %s' % (e[0], e[1]))
+                raise osv.except_osv(_(u'AFIP Web service error'),
+                                     _(u'System return error %i: %s\n'
+                                       u'Pueda que esté intente realizar esta operación'
+                                       u'desde el servidor de homologación.'
+                                       u'Intente desde el servidor de producción.') % (e[0], e[1]))
+
+            if hasattr(response, 'Errors'):
+                for e in response.Errors.Err:
+                    code = e.Code
+                    _logger.error('AFIP Web service error!: (%i) %s' % (e.Code, e.Msg))
+                r[srv.id] = False
+            else:
+                r[srv.id] = { 
+                    'Concepto': response.ResultGet.Concepto,
+                    'DocTipo': response.ResultGet.DocTipo,
+                    'DocNro': response.ResultGet.DocNro,
+                    'CbteDesde': response.ResultGet.CbteDesde,
+                    'CbteHasta': response.ResultGet.CbteHasta,
+                    'CbteFch': response.ResultGet.CbteFch,
+                    'ImpTotal': response.ResultGet.ImpTotal,
+                    'ImpTotConc': response.ResultGet.ImpTotConc,
+                    'ImpNeto': response.ResultGet.ImpNeto,
+                    'ImpOpEx': response.ResultGet.ImpOpEx,
+                    'ImpTrib': response.ResultGet.ImpTrib,
+                    'ImpIVA': response.ResultGet.ImpIVA,
+                    'FchServDesde': response.ResultGet.FchServDesde,
+                    'FchServHasta': response.ResultGet.FchServHasta,
+                    'FchVtoPago': response.ResultGet.FchVtoPago,
+                    'MonId': response.ResultGet.MonId,
+                    'MonCotiz': response.ResultGet.MonCotiz,
+                    'Resultado': response.ResultGet.Resultado,
+                    'CodAutorizacion': response.ResultGet.CodAutorizacion,
+                    'EmisionTipo': response.ResultGet.EmisionTipo,
+                    'FchVto': response.ResultGet.FchVto,
+                    'FchProceso': response.ResultGet.FchProceso,
+                    'PtoVta': response.ResultGet.PtoVta,
+                    'CbteTipo': response.ResultGet.CbteTipo,
+                }
+
+        return r
 
 wsafip_server()
 

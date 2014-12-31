@@ -109,6 +109,10 @@ class l10n_ar_wsafip_fe_config(osv.osv_memory):
                     sequence_obj.write(cr, uid, seq_id, {'number_next': remote_number + 1})
                 else:
                     _logger.info("Journal '%s' cant be used." % journal.name)
+
+            # Actualizo el código de impuestos de la AFIP en los impuestos locale.s
+            conn = conn_obj.browse(cr, uid, conn_id)
+            conn.server_id.wsfe_update_tax(conn_id)
             
         return True
 

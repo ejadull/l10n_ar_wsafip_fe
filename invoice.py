@@ -190,6 +190,9 @@ class invoice(osv.osv):
             journal = inv.journal_id
             conn = journal.afip_connection_id
 
+            # Ignore journals with cae
+            if inv.afip_cae and inv.afip_cae_due: continue
+
             # Only process if set to connect to afip
             if not conn: continue
             

@@ -80,9 +80,23 @@
 #
 # IVA responsable inscripto
 #
+- Create partner
+- !record {model: res.partner, id: par_ivari2 }:
+    name: Cablevision SA.
+    responsability_id: l10n_ar_invoice.res_IVARI 
+    document_type_id: l10n_ar_invoice.dt_CUIT
+    document_number: 30573652084
+    vat: ar30573652084
+    street: Hornos 690
+    city: Capital Federal
+    state_id: l10n_ar_states.C
+    country_id: base.ar
+    zip: 1414
+
 - Create company
 - !record {model: res.company, id: com_ivari2 }:
-    name: Melanoma SA.
+    name: Cablevision SA.
+    partner_id: par_ivari2
     rml_header1: .
     rml_header2: Web - Tel -
     rml_header3: CUIT - 
