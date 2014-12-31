@@ -137,10 +137,11 @@ class wsafip_server(osv.osv):
             if conn.state not in  [ 'connected', 'clockshifted' ]: continue
 
             # Build request
+            auth=conn.get_auth()
             try:
                 _logger.debug('Updating concept class from AFIP Web service')
                 srvclient = Client(srv.url+'?WSDL', transport=HttpsTransport())
-                response = srvclient.service.FEParamGetTiposConcepto(Auth=conn.get_auth())
+                response = srvclient.service.FEParamGetTiposConcepto(Auth=auth)
 
                 # Take list of concept type
                 concepttype_list = [
@@ -449,10 +450,11 @@ class wsafip_server(osv.osv):
 
             _logger.info('Get CAE from AFIP Web service')
 
+            auth = conn.get_auth()
             try:
                 srvclient = Client(srv.url+'?WSDL', transport=HttpsTransport())
                 first = invoice_request.keys()[0]
-                response = srvclient.service.FECAESolicitar(Auth=conn.get_auth(),
+                response = srvclient.service.FECAESolicitar(Auth=auth,
                     FeCAEReq = [{
                         'FeCabReq':{
                             'CantReg': len(invoice_request),
@@ -472,6 +474,7 @@ class wsafip_server(osv.osv):
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error: %s') % e[0])
             except Exception as e:
+                import pdb; pdb.set_trace()
                 _logger.error('AFIP Web service error!: (%i) %s' % (e[0], e[1]))
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error %i: %s') % (e[0], e[1]))
