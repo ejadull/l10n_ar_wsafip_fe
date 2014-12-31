@@ -25,8 +25,8 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
-# Number Filter
-re_number = re.compile(r'\d{8}')
+# Label filter to recover invoice number
+re_label = re.compile(r'%\([^\)]+\)s')
 
 # Functions to list parents names.
 def _get_parents(child, parents=[]):
@@ -199,14 +199,19 @@ class invoice(osv.osv):
             Servers[conn.id] = conn.server_id.id
 
             # Take the last number of the "number".
-            # Could not work if your number have not 8 digits.
-            invoice_number = int(re_number.search(inv.number).group())
+            prefix_re = ".*".join([ re.escape(w) for w in re_label.split(inv.journal_id.sequence_id.prefix or "")])
+            suffix_re = ".*".join([ re.escape(w) for w in re_label.split(inv.journal_id.sequence_id.suffix or "")])
+            re_number = re.compile(prefix_re + r"(\d+)" + suffix_re)
+            invoice_number = int(re_number.search(inv.number).group(1) or -1)
+            
+            if invoice_number < 0:
+                raise osv.except_osv(_(u'AFIP Validation Error'), _("Can't find invoice number. Please check the journal sequence prefix and suffix are not breaking the number generator."))
 
             _f_date = lambda d: d and d.replace('-','')
 
             # Build request dictionary
             if conn.id not in Requests: Requests[conn.id] = {}
-            assert inv.currency_id.afip_code, 'Must defined afip_code for this invoice'
+            assert inv.currency_id.afip_code, 'Must defined afip_code for the currency.'
             Requests[conn.id][inv.id]=dict( (k,v) for k,v in {
                 'CbteTipo': journal.journal_class_id.afip_code,
                 'PtoVta': journal.point_of_sale,
