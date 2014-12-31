@@ -30,6 +30,8 @@
                 'data/wsafip_fe_config.xml',
                 'data/res_config_view.xml',
                 'data/wsafip_server_actions.xml',
+                'wizard/query_invoices_view.xml',
+                'wizard/validate_invoices_view.xml',
                 'security/wsafip_fe_security.xml',
                 'security/ir.model.access.csv'],
     'demo_xml': [],
