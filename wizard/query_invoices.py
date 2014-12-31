@@ -63,7 +63,12 @@ class query_invoices(osv.osv_memory):
         for qi in self.browse(cr, uid, ids):
             conn = qi.journal_id.afip_connection_id
             serv = qi.journal_id.afip_connection_id.server_id
-            number_format = "%s%%0%sd%s" % (qi.journal_id.sequence_id.prefix, qi.journal_id.sequence_id.padding , qi.journal_id.sequence_id.suffix)
+
+            sequence = qi.journal_id.sequence_id
+            interpolation_dict = sequence._interpolation_dict()
+            interpolated_prefix = sequence._interpolate(sequence.prefix or "", interpolation_dict)
+            interpolated_suffix = sequence._interpolate(sequence.suffix or "", interpolation_dict)
+            number_format = "%s%%0%sd%s" % (interpolated_prefix, qi.journal_id.sequence_id.padding , interpolated_suffix)
 
             if qi.first_invoice_number > qi.last_invoice_number:
                 raise osv.except_osv(_(u'Qrong invoice range numbers'), _('Please, first invoice number must be less than last invoice'))
