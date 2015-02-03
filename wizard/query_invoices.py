@@ -26,6 +26,15 @@ import logging
 _logger = logging.getLogger(__name__)
 _schema = logging.getLogger(__name__ + '.schema')
 
+_queries = {
+    'by number': "[['number','=',invoice_number]]",
+    'by nearest draft': "[['state','=','draft'],['partner_id.document_type_id.afip_code','=',DocTipo],['partner_id.document_number','=',DocNro],['amount_total','=',ImpTotal]]",
+}
+_update_domain = [
+    ('by number', 'By invoice number'),
+    ('by nearest draft', 'Nearest draft invoice'),
+]
+
 class query_invoices(osv.osv_memory):
     _name = 'l10n_ar_wsafip_fe.query_invoices'
     _description = 'Query for invoices in AFIP web services'
@@ -34,11 +43,13 @@ class query_invoices(osv.osv_memory):
         'first_invoice_number': fields.integer('First invoice number', required=True),
         'last_invoice_number': fields.integer('Last invoice number', required=True),
         'update_invoices': fields.boolean('Update CAE if invoice exists'),
+        'update_domain': fields.selection(_update_domain, string="Update relation"),
         'create_invoices': fields.boolean('Create invoice in draft if not exists'),
     }
     _defaults = {
         'first_invoice_number': 1,
         'last_invoice_number': 1,
+        'update_domain': "by number",
     }
 
     def onchange_journal_id(self, cr, uid, ids, first_invoice_number, journal_id):
@@ -59,7 +70,7 @@ class query_invoices(osv.osv_memory):
         invoice_obj = self.pool.get('account.invoice')
         partner_obj = self.pool.get('res.partner')
         document_type_obj = self.pool.get('afip.document_type')
-        _ids = []
+        v_r = []
 
         for qi in self.browse(cr, uid, ids):
             conn = qi.journal_id.afip_connection_id
@@ -91,16 +102,30 @@ class query_invoices(osv.osv_memory):
                 r = r[serv.id]
 
                 if r['EmisionTipo'] == 'CAE':
-                    inv_ids = invoice_obj.search(cr, uid, [
-                        ( 'journal_id', '=', qi.journal_id.id),
-                        ( 'number', '=', number_format % inv_number),
-                    ])
+                    invoice_domain = eval(_queries[qi.update_domain], {}, dict(r.items() + [['invoice_number',number_format % inv_number]]))
+                    inv_ids = invoice_obj.search(cr, uid, [('journal_id','=',qi.journal_id.id)] + invoice_domain)
 
-                    if inv_ids and qi.update_invoices:
+                    if inv_ids and qi.update_invoices and len(inv_ids) == 1:
                         # Update Invoice
-                        # TODO: if invoice in draft complete all data.
-                        # TODO: if invoice in not draft just complete cae if not set.
                         _logger.debug("Update invoice number: %s" % (number_format % inv_number))
+                        invoice_obj.write(cr, uid, inv_ids, {
+                            'date_invoice': _fch_(r['CbteFch']),
+                            'internal_number': number_format % inv_number,
+                            'afip_cae': r['CodAutorizacion'],
+                            'afip_cae_due': _fch_(r['FchProceso']),
+                            'afip_service_start': _fch_(r['FchServDesde']),
+                            'afip_service_end': _fch_(r['FchServHasta']),
+                            'amount_total': r['ImpTotal'],
+                        })
+                        msg = 'Updated from AFIP (%s)' % (number_format % inv_number)
+                        invoice_obj.message_post(cr, uid, inv_ids, body=msg, subtype="l10n_ar_wsafip_fe.mt_invoice_ws_action", context=context)
+                        v_r.extend(inv_ids)
+                    elif inv_ids and qi.update_invoices and len(inv_ids) > 1:
+                        # Duplicated Invoices
+                        _logger.info("Duplicated invoice number: %s %s" % (number_format % inv_number, tuple(inv_ids)))
+                        msg = 'Posible duplication from AFIP (%s)' % (number_format % inv_number)
+                        for inv_id in inv_ids:
+                            invoice_obj.message_post(cr, uid, inv_id, body=msg, subtype="l10n_ar_wsafip_fe.mt_invoice_ws_action", context=context)
                     elif not inv_ids and qi.create_invoices:
                         partner_id = partner_obj.search(cr, uid, [
                             ('document_type_id.afip_code','=',r['DocTipo']),
@@ -127,7 +152,7 @@ class query_invoices(osv.osv_memory):
                         if not partner.property_account_receivable.id:
                             raise osv.except_osv(_(u'Partner has not set a receivable account'), _('Please, first set the receivable account for %s') % partner.name)
 
-                        _ids.append(invoice_obj.create(cr, uid, {
+                        inv_id = invoice_obj.create(cr, uid, {
                             'company_id': qi.journal_id.company_id.id,
                             'account_id': partner.property_account_receivable.id,
                             'internal_number': number_format % inv_number,
@@ -141,7 +166,10 @@ class query_invoices(osv.osv_memory):
                             'afip_service_end': _fch_(r['FchServHasta']),
                             'amount_total': r['ImpTotal'],
                             'state': 'draft',
-                        }))
+                        })
+                        msg = 'Created from AFIP (%s)' % (number_format % inv_number)
+                        invoice_obj.message_post(cr, uid, inv_id, body=msg, subtype="l10n_ar_wsafip_fe.mt_invoice_ws_action", context=context)
+                        v_r.append(inv_id)
                     else:
                         _logger.debug("Ignoring invoice: %s" % (number_format % inv_number))
 
