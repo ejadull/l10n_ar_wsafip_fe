@@ -30,6 +30,7 @@
                   <field name="first_invoice_number"/>
                   <field name="last_invoice_number"/>
                   <field name="update_invoices"/>
+                  <field name="update_domain"/>
                   <field name="create_invoices"/>
               </group>
               <footer>
