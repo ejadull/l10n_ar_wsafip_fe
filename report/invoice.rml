@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<document filename="fe_invoice.pdf">
+<document filename="fe_mrled_invoice.pdf">
     <template pageSize="(21cm,29.7cm)"
         title="Comprobante Impreso de Factura Electrónica para Argentina"
         author="Team de Localización Argentina"
@@ -100,7 +100,7 @@
         <para>[[ setLang(o.partner_id.lang) ]]</para>
         <!-- ORIGINAL -->
         <section>
-            <para>[[ repeatIn(copies,'document_copy') ]]</para>
+            <!-- para>[[ repeatIn(copies,'document_copy') ]]</para -->
             <nextFrame name="header_section">[[ (document_copy == 'ORIGINAL' and removeParentNode('nextFrame')) or '' ]]</nextFrame>
                 <para style="header">[[ document_copy ]]</para>
             <nextFrame name="seller_section"/>
@@ -150,32 +150,35 @@
                     </tr>
                     <tr>
                     <td><para style="seller"><b>Condición de venta: </b> Efectivo </para></td>
-                    <td><para style="seller"><b>Nro. Remito: </b>[[ o.origin if o.afip_service_start is None else '-' ]]</para></td>
+                    <td><para style="seller"><b>Nro. Remito: </b>[[ o.nro_remito ]]</para></td>
+                    <!-- td><para style="seller"><b>Nro. Remito: </b>[[ o.nro_remito if o.afip_service_start is None else '-' ]]</para></td -->
                     </tr>
                 </blockTable>
                 <nextFrame name="detail_section"/>
-                <blockTable colWidths="8cm,2cm,2cm,2cm,2cm,2cm,2cm" style="DetailsHeader">
+                <blockTable colWidths="7cm,3cm,2cm,2cm,2cm,2cm,2cm" style="DetailsHeader">
                     <tr>
                         <td>Producto/Servicio</td>
+                        <td>Nro.Serie</td>
                         <td>Cantidad</td>
                         <td>U.Medida</td>
                         <td>Precio Unit.</td>
-                        <td>% Bonif.</td>
+                        <!-- td>% Bonif.</td -->
                         <td>Imp. Bonif.</td>
                         <td>Subtotal</td>
                     </tr>
                 </blockTable>
                 <section>
                     <para style="body">[[ repeatIn(o.invoice_line,'l') ]]</para>
-                    <blockTable colWidths="8cm,2cm,2cm,2cm,2cm,2cm,2cm" style="Details">
+                    <blockTable colWidths="7cm,3cm,2cm,2cm,2cm,2cm,2cm" style="Details">
                         <tr>
                             <td><para style="small">[[ l.name ]]</para></td>
+                            <td><para style="small">[[ l.serial_number ]]</para></td>
                             <td>[[ formatLang(l.quantity) ]]</td>
                             <td>[[ l.uos_id.name ]]</td>
-                            <td>[[ formatLang(l.price_calc(use_vat=not is_class(o, 'A'), quantity=1, discount=0)[l.id]) ]]</td>
-                            <td>[[ l.discount and formatLang(l.discount) or '-' ]]</td>
+                            <td>[[ formatLang(l.price_unit) ]]</td>
+                            <!-- td>[[ formatLang(l.discount) ]]</td -->
                             <td>[[ l.discount and formatLang(l.price_calc(use_vat=not is_class(o, 'A'), quantity=1)[l.id]) or '-' ]]</td>
-                            <td>[[ formatLang(l.price_calc(use_vat=not is_class(o, 'A'))[l.id]) ]]</td>
+                            <td>[[ formatLang(l.price_subtotal) ]]</td>
                         </tr>
                     </blockTable>
                 </section>
@@ -235,7 +238,7 @@
                         </td>
                         <td><para style='foot' alignment='center'>Pág. 1/1</para></td>
                         <td><para style='foot' alignment='right'>Comprobante generado con</para> </td>
-                        <td><para style='foot' alignment='left'><a href='http://www.openerp.com/'>OpenERP</a>.</para> </td>
+                        <td><para style='foot' alignment='left'><a href='http://www.odoo.com/'>Odoo</a>.</para> </td>
                     </tr>
                 </blockTable>
         </section>
