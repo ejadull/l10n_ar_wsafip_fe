@@ -494,7 +494,7 @@ class wsafip_server(osv.osv):
 
             if not hasattr(response, 'FeDetResp'):
                 raise osv.except_osv(_(u'AFIP error'),
-                                     _(u'Stupid error:\n%s') % ('\n'.join("%i:%s" % common_error)))
+                                     _(u'Stupid error:\n%s') % ('\n'.join(["%i:%s" % err for err in common_error])))
 
             for resp in response.FeDetResp.FECAEDetResponse:
                 if resp.Resultado == 'R':
