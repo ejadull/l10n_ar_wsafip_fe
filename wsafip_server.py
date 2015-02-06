@@ -487,8 +487,14 @@ class wsafip_server(osv.osv):
                                      
             soapRequest = [{ 'FeCabReq':{ 'CantReg': len(invoice_request), 'PtoVta': invoice_request[first]['PtoVta'], 'CbteTipo': invoice_request[first]['CbteTipo'],}, 'FeDetReq': [{ 'FECAEDetRequest': dict([ (k, v) for k,v in req.iteritems() if k not in ['CantReg', 'PtoVta', 'CbteTipo'] ] ) } for req in invoice_request.itervalues()], }]
 
-            common_error = [ (e.Code, unicode(e.Msg)) for e in response.Errors[0] ] if response.FeCabResp.Resultado in ["P", "R"] and hasattr(response, 'Errors') else []
+            common_error = [(e.Code, unicode(e.Msg)) for e in response.Errors[0] ] \
+                           if hasattr(response, 'Errors') \
+                           else []
             _logger.error('Request error: %s' % (common_error,))
+
+            if not hasattr(response, 'FeDetResp'):
+                raise osv.except_osv(_(u'AFIP error'),
+                                     _(u'Stupid error:\n%s') % ('\n'.join("%i:%s" % common_error)))
 
             for resp in response.FeDetResp.FECAEDetResponse:
                 if resp.Resultado == 'R':

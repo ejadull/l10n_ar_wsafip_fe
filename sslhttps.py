@@ -27,8 +27,6 @@ import ssl
 import logging
 from suds.transport.http import HttpTransport, Reply, TransportError
 
-#logging.getLogger(__name__).setLevel(logging.DEBUG)
-
 _logger = logging.getLogger(__name__)
 
 class HTTPSConnection(httplib.HTTPConnection):
