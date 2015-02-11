@@ -25,27 +25,3 @@
     journal_id = self.search(cr, uid, [('code','=','FVB0001'), ('company_id.name','=','Coop. Trab. Moldeo Interactive Ltda.')])
     self.write(cr, uid, journal_id, {'afip_connection_id': ref("connection_ar_0")})
 
-- Check status of connection.
-- !python {model: account.journal}: |
-    journal_id = self.search(cr, uid, [('code','=','FVA0001'), ('company_id.name','=','Coop. Trab. Moldeo Interactive Ltda.')])
-    data = self.read(cr, uid, journal_id)
-
-- Check status of connection.
-- !assert {model: account.journal, search: "[('code','=','FVA0001'), ('company_id.name','=','Coop. Trab. Moldeo Interactive Ltda.')]", string: Connection must happen}:
-   - afip_state == 'connected' 
-   - afip_items_generated >= 0
-
-- Check status of connection.
-- !python {model: account.journal}: |
-    journal_id = self.search(cr, uid, [('code','=','FVB0001'), ('company_id.name','=','Coop. Trab. Moldeo Interactive Ltda.')])
-    data = self.read(cr, uid, journal_id)
-
-- Check status of connection.
-- !assert {model: account.journal, search: "[('code','=','FVB0001'), ('company_id.name','=','Coop. Trab. Moldeo Interactive Ltda.')]", string: Connection must happen}:
-   - afip_state == 'connected' 
-   - afip_items_generated >= 0
-
-#- Test
-#- !python {model: account.journal }: |
-#    import pdb; pdb.set_trace()
-

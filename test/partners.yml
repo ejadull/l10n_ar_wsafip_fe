@@ -8,7 +8,7 @@
     document_number: 25095454
     street: Av. Rivadavia
     city: Capital Federal
-    state_id: l10n_ar_states.C
+    state_id: l10n_ar_states.CABA
     country_id: base.ar
     zip: 1407
 
@@ -24,7 +24,7 @@
     vat: ar30681521077
     street: Azcuenaga 770
     city: Capital Federal
-    state_id: l10n_ar_states.C
+    state_id: l10n_ar_states.CABA
     country_id: base.ar
     zip: 1029
 
@@ -49,7 +49,7 @@
     vat: ar30712007288
     street: Castillo 1336 12A 
     city: Capital Federal
-    state_id: l10n_ar_states.C
+    state_id: l10n_ar_states.CABA
     country_id: base.ar
     zip: 1414
 
@@ -89,7 +89,7 @@
     vat: ar30573652084
     street: Hornos 690
     city: Capital Federal
-    state_id: l10n_ar_states.C
+    state_id: l10n_ar_states.CABA
     country_id: base.ar
     zip: 1414
 
@@ -142,7 +142,7 @@
     vat: ar30642332771
     street: Roca Julio A. Pte. Av. 733, 5
     city: Capital Federal
-    state_id: l10n_ar_states.C
+    state_id: l10n_ar_states.CABA
     country_id: base.ar
     zip: 1067
 
@@ -218,7 +218,7 @@
     vat: ar23250954549
     street: Av. Rivadavia
     city: Capital Federal
-    state_id: l10n_ar_states.C
+    state_id: l10n_ar_states.CABA
     country_id: base.ar
     zip: 1407
 
