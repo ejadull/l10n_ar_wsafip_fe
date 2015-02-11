@@ -3,12 +3,12 @@
 <data>
 
 <template id="style">
-div#afipheader {
+.afiptable {
 width: 100%;
 display: table;
 }
 
-div#clase_documento {
+.clase_documento {
 position: absolute;
 right: 45%;
 border: 1px solid black;
@@ -34,16 +34,18 @@ vertical-align: middle;
 display: table-cell;
 border: 1px solid black;
 width: 50%;
-padding: 5px 6% 5px 5px;
+padding: 5px 10% 5px 5px;
 vertical-align: middle;
+font-size: smaller;
 }
 
 .afipright {
 display: table-cell;
 border: 1px solid black;
 width: 50%;
-padding: 5px 5px 5px 6%;
+padding: 5px 5px 5px 10%;
 vertical-align: middle;
+font-size: smaller;
 }
 
 div.afipfield {
@@ -52,14 +54,31 @@ overflow: auto;
 
 div.afipfield label {
 padding-right: 6px;
+width: 50%;
+text-align: right;
+float: left;
+margin-bottom: 0px;
 }
 
 div.afipfield label::after {
 content: ':';
 }
 
-div.afipfield * {
+div.afipfield label + * {
 float: left;
+width: 50%;
+margin-bottom: 0px;
+}
+
+.afipimportant {
+font-size:medium;
+}
+
+footer {
+position:absolute;
+bottom:0px;
+height: auto;
+width: inherit;
 }
 </template>
 
@@ -73,11 +92,9 @@ float: left;
         <div id="afipheader">
             <div class="afiprow">
                 <div class="afipleft">
-                     <div style="text-align:center"><img t-if="res_company.logo" t-att-src="'data:image/png;base64,%s' % res_company.logo" style="max-height: 45px;"/></div>
-                    <img t-att-src="'data:image/png;base64,%s' % o.company_id.logo" style="max-height: 45px;"/>
-                    <div class="afipfield"><h4 t-field="o.company_id.name"/></div>
-                    <div class="afipfield"><label>Dirección</label><address t-field="o.company_id.partner_id"
-                        t-field-options='{"widget": "contact", "fields": ["address"], "no_marker": true}' /></div>
+                    <div style="text-align:center"><img t-if="res_company.logo" t-att-src="'data:image/png;base64,%s' % res_company.logo" style="max-height: 45px;"/></div>
+                    <div class="afipfield afipimportant"><span t-field="o.company_id.name"/></div>
+                    <div class="afipfield"><label>Dirección</label><address t-field="o.company_id.partner_id" t-field-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;], &quot;no_marker&quot;: true}"/></div>
                 </div>
                 <div class="afipright">
                     <div class="afipfield"><label>Factura N°</label><p class="afipfield" t-field="o.number"/></div>
@@ -90,7 +107,7 @@ float: left;
             </div>
             <div class="afiprow">
                   <div class="afipleft">
-                    <div class="afipfield"><label>Cliente</label><p class="afipfield" t-field="o.partner_id.name"/></div>
+                    <div class="afipfield afipimportant"><label>Cliente</label><p class="afipfield" t-field="o.partner_id.name"/></div>
                     <div class="afipfield"><label>Dirección</label><address t-field="o.partner_id" t-field-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;], &quot;no_marker&quot;: true}"/></div>
                   </div>
                   <div class="afipright">
@@ -99,6 +116,7 @@ float: left;
                   </div>
             </div>
         </div>
+        <t t-set="declare_vat" t-value="o.journal_id.journal_class_id.document_class_id.name in 'A'"/>
         <table class="table table-condensed">
             <thead>
                 <tr>
@@ -106,7 +124,7 @@ float: left;
                     <th>Quantity</th>
                     <th class="text-right">Unit Price</th>
                     <th class="text-right" groups="sale.group_discount_per_so_line">Discount (%)</th>
-                    <th class="text-right">Taxes</th>
+                    <th class="text-right" groups="sale.group_discount_per_so_line">Subtotal</th>
                     <th class="text-right">Amount</th>
                 </tr>
             </thead>
@@ -115,18 +133,15 @@ float: left;
                     <td><span t-field="l.name"/></td>
                     <td>
                         <span t-field="l.quantity"/>
-                        <span t-field="l.uos_id"  groups="product.group_uom"/>
+                        <span t-field="l.uos_id" groups="product.group_uom"/>
                     </td>
                     <td class="text-right">
-                        <span t-field="l.price_unit"/>
+                        <span t-esc="l.price_calc(use_vat=not declare_vat, quantity=1, discount=0)"/>
                     </td>
                     <td groups="sale.group_discount_per_so_line"><span t-field="l.discount"/></td>
+                    <td groups="sale.group_discount_per_so_line"><span t-esc="l.price_calc(use_vat=not declare_vat, quantity=1, discount=l.discount)"/></td>
                     <td class="text-right">
-                        <span t-esc="', '.join(map(lambda x: x.name, l.invoice_line_tax_id))"/>
-                    </td>
-                    <td class="text-right">
-                        <span t-field="l.price_subtotal" 
-                            t-field-options='{"widget": "monetary", "display_currency": "o.currency_id"}'/>
+                        <span t-esc="l.price_calc(use_vat=not declare_vat, quantity=l.quantity, discount=l.discount)" t-field-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: &quot;o.currency_id&quot;}"/>
                     </td>
                 </tr>
             </tbody>
@@ -135,29 +150,29 @@ float: left;
         <div class="row">
             <div class="col-xs-4 pull-right">
                 <table class="table table-condensed">
-                    <tr class="border-black">
+                    <tr t-if="declare_vat" class="border-black">
                         <td><strong>Total Without Taxes</strong></td>
                         <td class="text-right">
-                            <span t-field="o.amount_untaxed" t-field-options='{"widget": "monetary", "display_currency": "o.currency_id"}'/>
+                            <span t-field="o.amount_untaxed" t-field-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: &quot;o.currency_id&quot;}"/>
                         </td>
                     </tr>
-                    <tr>
+                    <tr t-if="declare_vat">
                         <td>Taxes</td>
                         <td class="text-right">
-                            <span t-field="o.amount_tax" t-field-options='{"widget": "monetary", "display_currency": "o.currency_id"}'/>
+                            <span t-field="o.amount_tax" t-field-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: &quot;o.currency_id&quot;}"/>
                         </td>
                     </tr>
                     <tr class="border-black">
                         <td><strong>Total</strong></td>
                         <td class="text-right">
-                             <span t-field="o.amount_total" t-field-options='{"widget": "monetary", "display_currency": "o.currency_id"}'/>
+                             <span t-field="o.amount_total" t-field-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: &quot;o.currency_id&quot;}"/>
                         </td>
                     </tr>
                 </table>
             </div>
         </div>
 
-        <div class="row" t-if="o.tax_line">
+        <div class="row" t-if="declare_vat and o.tax_line">
             <div class="col-xs-6">
                 <table class="table table-condensed">
                     <thead>
@@ -171,12 +186,10 @@ float: left;
                         <tr t-foreach="o.tax_line" t-as="t">
                             <td><span t-field="t.name"/></td>
                             <td class="text-right">
-                                <span t-field="t.base"
-                                    t-field-options='{"widget": "monetary", "display_currency": "o.currency_id"}'/>
+                                <span t-field="t.base" t-field-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: &quot;o.currency_id&quot;}"/>
                             </td>
                             <td class="text-right">
-                                <span t-field="t.amount"
-                                    t-field-options='{"widget": "monetary", "display_currency": "o.currency_id"}'/>
+                                <span t-field="t.amount" t-field-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: &quot;o.currency_id&quot;}"/>
                             </td>
                         </tr>
                     </tbody>
@@ -198,7 +211,8 @@ float: left;
         </p>
 
         <div t-if="o.afip_cae" style="text-align:center">
-            <img t-att-src="'/report/barcode/?type=%s&amp;value=%s&amp;width=%s&amp;height=%s'%('I2of5', o.afip_cae, 200, 100)"/>
+            <img t-att-src="'/report/barcode/?type=%s&amp;value=%s%02i%04i%014i%08i&amp;width=%s&amp;height=%s'%('I2of5', res_company.partner_id.document_number or '000000000', o.journal_id.journal_class_id.afip_code, o.journal_id.point_of_sale, int(o.afip_cae or 0), int(o.afip_cae_due!=False and o.afip_cae_due.replace('-','') or 0), 800, 100)"/>
+            <p><t t-esc="'%s%02i%04i%014i%08i'%(res_company.partner_id.document_number or '000000000', o.journal_id.journal_class_id.afip_code, o.journal_id.point_of_sale, int(o.afip_cae or 0), int(o.afip_cae_due!=False and o.afip_cae_due.replace('-','') or 0))"/></p>
             <br/>
             <strong>CAE:</strong>
             <span t-field="o.afip_cae"/>
