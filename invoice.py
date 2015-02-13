@@ -111,7 +111,7 @@ class invoice(osv.osv):
             r[inv.id] = []
 
             for tax in inv.tax_line:
-                if tax.account_id.name == 'IVA a pagar':
+                if 'IVA' in _get_parents(tax.tax_code_id):
                     continue
                 if tax.tax_code_id:
                     r[inv.id].append({
@@ -137,7 +137,7 @@ class invoice(osv.osv):
             r[inv.id] = []
 
             for tax in inv.tax_line:
-                if tax.account_id.name != 'IVA a pagar':
+                if 'IVA' not in _get_parents(tax.tax_code_id):
                     continue
                 r[inv.id].append({
                     'Id': tax.tax_code_id.parent_afip_code,
