@@ -376,13 +376,23 @@ class wsafip_server(osv.osv):
                     for c in response.ResultGet.IvaTipo
                 ])
 
+            except AttributeError as e:
+                if hasattr(response, 'Errors'):
+                    for err in response.Errors.Err:
+                        msg = '\n'.join("(%i) %s" % (err.Code, err.Msg) for err in response.Errors.Err)
+                    raise osv.except_osv(_(u'AFIP Web service error'),
+                                     _(u'System return: %s') % msg)
+                else:
+                    raise osv.except_osv(_(u'AFIP Web service error'),
+                                     _(u'System return: %s') % e)
+                   
             except Exception as e:
+                import pdb; pdb.set_trace()
                 _logger.error('AFIP Web service error!: (%i) %s' % (e[0], e[1]))
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error %i: %s') % (e[0], e[1]))
 
             tax_code_obj = self.pool.get('account.tax.code')
-
 
             for tc in tax_list:
                 tax_code_ids = tax_code_obj.search(cr, uid, [('name','ilike', tc['name'])])
