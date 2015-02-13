@@ -111,7 +111,7 @@ class invoice(osv.osv):
             r[inv.id] = []
 
             for tax in inv.tax_line:
-                if tax.account_id.name == 'IVA a pagar':
+                if 'IVA' in _get_parents(tax.tax_code_id):
                     continue
                 if tax.tax_code_id:
                     r[inv.id].append({
@@ -137,7 +137,7 @@ class invoice(osv.osv):
             r[inv.id] = []
 
             for tax in inv.tax_line:
-                if tax.account_id.name != 'IVA a pagar':
+                if 'IVA' not in _get_parents(tax.tax_code_id):
                     continue
                 r[inv.id].append({
                     'Id': tax.tax_code_id.parent_afip_code,
@@ -277,7 +277,7 @@ class invoice(osv.osv):
         is_electronic = bool(self.browse(cr, uid, ids[0]).journal_id.afip_connection_id)
         return {
             'type': 'ir.actions.report.xml',
-            'report_name': 'account.invoice_fe' if is_electronic else 'account.invoice',
+            'report_name': 'l10n_ar_wsafip_fe.report_invoice' if is_electronic else 'account.report_invoice',
             'datas': datas,
             'nodestroy' : True
         }
