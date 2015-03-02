@@ -144,7 +144,7 @@ class invoice(osv.osv):
         return r[ids] if isinstance(ids, int) else r
 
     def get_optionals(self, cr, uid, ids, *args):
-        opt_type_obj = self.pool.get('afip.opt_type')
+        opt_type_obj = self.pool.get('afip.optional_type')
 
         r = {}
         _ids = [ids] if isinstance(ids, int) else ids

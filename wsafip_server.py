@@ -466,6 +466,7 @@ class wsafip_server(osv.osv):
             if conn.state not in  [ 'connected', 'clockshifted' ]: continue
 
             _logger.info('Get CAE from AFIP Web service')
+            _logger.debug('Request: %s' % invoice_request)
 
             auth = conn.get_auth()
             try:
