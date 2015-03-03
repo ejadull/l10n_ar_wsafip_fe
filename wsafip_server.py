@@ -387,7 +387,6 @@ class wsafip_server(osv.osv):
                                      _(u'System return: %s') % e)
                    
             except Exception as e:
-                import pdb; pdb.set_trace()
                 _logger.error('AFIP Web service error!: (%i) %s' % (e[0], e[1]))
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error %i: %s') % (e[0], e[1]))
@@ -481,8 +480,8 @@ class wsafip_server(osv.osv):
                         },
                         'FeDetReq': [
                             { 'FECAEDetRequest': dict(
-                                [ (k, v) for k,v in req.iteritems()
-                                 if k not in ['CantReg', 'PtoVta', 'CbteTipo'] ] ) }
+                                [(k, v) for k,v in req.iteritems()
+                                 if k not in ['CantReg', 'PtoVta', 'CbteTipo']])}
                             for req in invoice_request.itervalues()
                         ],
                     }]
@@ -495,7 +494,7 @@ class wsafip_server(osv.osv):
                 _logger.error('AFIP Web service error!: (%i) %s' % (e[0], e[1]))
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error %i: %s') % (e[0], e[1]))
-                                     
+
             soapRequest = [{ 'FeCabReq':{ 'CantReg': len(invoice_request), 'PtoVta': invoice_request[first]['PtoVta'], 'CbteTipo': invoice_request[first]['CbteTipo'],}, 'FeDetReq': [{ 'FECAEDetRequest': dict([ (k, v) for k,v in req.iteritems() if k not in ['CantReg', 'PtoVta', 'CbteTipo'] ] ) } for req in invoice_request.itervalues()], }]
 
             common_error = [(e.Code, unicode(e.Msg)) for e in response.Errors[0] ] \

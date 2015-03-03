@@ -8,7 +8,7 @@ _logger = logging.getLogger(__name__)
 
 # Label filter to recover invoice number
 re_label = re.compile(r'%\([^\)]+\)s')
-
+prec = 5
 
 def _get_parents(child, parents=[]):
     "Functions to list parents names."
@@ -113,9 +113,9 @@ class invoice(osv.osv):
                     r[inv.id].append({
                         'Id': tax.tax_code_id.parent_afip_code,
                         'Desc': tax.tax_code_id.name,
-                        'BaseImp': tax.base_amount,
-                        'Alic': (tax.tax_amount / tax.base_amount),
-                        'Importe': tax.tax_amount,
+                        'BaseImp': round(tax.base_amount, prec),
+                        'Alic': round(tax.tax_amount / tax.base_amount, prec),
+                        'Importe': round(tax.tax_amount, prec),
                     })
                 else:
                     raise osv.except_osv(
@@ -137,11 +137,11 @@ class invoice(osv.osv):
                     continue
                 r[inv.id].append({
                     'Id': tax.tax_code_id.parent_afip_code,
-                    'BaseImp': tax.base_amount,
-                    'Importe': tax.tax_amount,
+                    'BaseImp': round(tax.base_amount, prec),
+                    'Importe': round(tax.tax_amount, prec),
                 })
 
-        return r[ids] if isinstance(ids, int) else r
+        return r[ids] if isinstance(ids, (long,int)) else r
 
     def get_optionals(self, cr, uid, ids, *args):
         opt_type_obj = self.pool.get('afip.optional_type')
@@ -246,18 +246,18 @@ class invoice(osv.osv):
                 'CbteDesde': invoice_number,
                 'CbteHasta': invoice_number,
                 'CbteFch': _f_date(inv.date_invoice),
-                'ImpTotal': inv.amount_total,
+                'ImpTotal': round(inv.amount_total, prec),
                 # TODO:
                 # Averiguar como calcular el Importe Neto no Gravado
                 'ImpTotConc': 0,
-                'ImpNeto': inv.amount_untaxed,
-                'ImpOpEx': inv.compute_all(
+                'ImpNeto': round(inv.amount_untaxed, prec),
+                'ImpOpEx': round(inv.compute_all(
                     line_filter=lambda line: len(line.invoice_line_tax_id) == 0
-                )['amount_total'],
-                'ImpIVA': inv.compute_all(
-                    tax_filter=_iva_filter)['amount_tax'],
-                'ImpTrib': inv.compute_all(
-                    tax_filter=_not_iva_filter)['amount_tax'],
+                )['amount_total'], prec),
+                'ImpIVA': round(inv.compute_all(
+                    tax_filter=_iva_filter)['amount_tax'], prec),
+                'ImpTrib': round(inv.compute_all(
+                    tax_filter=_not_iva_filter)['amount_tax'], prec),
                 'FchServDesde': _f_date(inv.afip_service_start)
                 if inv.afip_concept != '1' else None,
                 'FchServHasta': _f_date(inv.afip_service_end)
@@ -265,9 +265,9 @@ class invoice(osv.osv):
                 'FchVtoPago': _f_date(inv.date_due)
                 if inv.afip_concept != '1' else None,
                 'MonId': inv.currency_id.afip_code,
-                'MonCotiz': currency_obj.compute(
+                'MonCotiz': round(currency_obj.compute(
                     cr, uid,
-                    inv.currency_id.id, inv.company_id.currency_id.id, 1.),
+                    inv.currency_id.id, inv.company_id.currency_id.id, 1.), prec),
                 'CbtesAsoc': [
                     {'CbteAsoc': c}
                     for c in self.get_related_invoices(cr, uid, inv.id)],
@@ -282,6 +282,23 @@ class invoice(osv.osv):
                     for o in self.get_optionals(cr, uid, inv.id)],
             }.iteritems() if v is not None)
             Inv2id[invoice_number] = inv.id
+
+            import pdb; pdb.set_trace()
+
+            # AFIP Validation Error
+            # Factura 1:
+            # (10048) El campo  'Importe Total' ImpTotal, debe ser igual  a la  suma de ImpTotConc + ImpNeto + ImpOpEx + ImpTrib + ImpIVA.
+            # (10023) La suma de los campos Importe en IVA debe ser igual al valor ingresado en ImpIVA.
+            # (10061) La suma de los campos BaseImp en AlicIva debe ser igual al valor ingresado en ImpNeto.
+
+# {1: {13855: {'ImpTotal': 2715.21, 'MonId': u'PES', 'ImpOpEx': 0.0, 'Iva': [{'AlicIva': {'BaseImp': 109.9, 'Id': 5, 'Importe': 23.08}}, {'AlicIva': {'BaseImp': 2605.31, 'Id': 3, 'Importe': 0.0}}], 'ImpIVA': 23.08, 'CbteTipo': 6, 'Tributos': [], 'CbteDesde': 1, 'Concepto': '1', 'DocNro': 23251027, 'ImpNeto': 2715.21, 'CbteFch': '20150302', 'CbteHasta': 1, 'DocTipo': 96, 'MonCotiz': 1.0, 'ImpTrib': 0.0, 'Opcionales': [], 'PtoVta': 55, 'ImpTotConc': 0, 'CbtesAsoc': []}}}
+# 
+
+
+        #for c_id, req in Requests.iteritems():
+        #    for k_id, sreq in req.iteritems():
+        #        sreq['ImpNeto'] = sum(i['AlicIva']['BaseImp'] for i in sreq['Iva'])
+        #import pdb; pdb.set_trace()
 
         for c_id, req in Requests.iteritems():
             conn = conn_obj.browse(cr, uid, c_id)
