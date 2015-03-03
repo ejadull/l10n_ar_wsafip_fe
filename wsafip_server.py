@@ -1,23 +1,4 @@
 # -*- coding: utf-8 -*-
-##############################################################################
-#
-# Copyright (C) 2012 OpenERP - Team de Localización Argentina.
-# https://launchpad.net/~openerp-l10n-ar-localization
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, see <http://www.gnu.org/licenses/>.
-#
-##############################################################################
 from openerp.osv import fields, osv
 from openerp.tools.translate import _
 from suds.client import Client
@@ -31,12 +12,12 @@ from sslhttps import HttpsTransport
 _logger = logging.getLogger(__name__)
 
 def _update(pool, cr, uid, model_name, remote_list, can_create=True, domain=[]):
-    model_obj = pool.get(model_name) 
+    model_obj = pool.get(model_name)
 
     # Build set of AFIP codes
     rem_afip_code_set = set([ i['afip_code'] for i in remote_list ])
 
-    # Take exists instances 
+    # Take exists instances
     sto_ids = model_obj.search(cr, uid, [('active','in',['f','t'])] + domain)
     sto_list = model_obj.read(cr, uid, sto_ids, ['afip_code'])
     sto_afip_code_set = set([ i['afip_code'] for i in sto_list ])
@@ -64,7 +45,7 @@ def _update(pool, cr, uid, model_name, remote_list, can_create=True, domain=[]):
         model_obj.write(cr, uid, model_ids, {'active':False})
 
     # To disable exists local afip_code but not in remote
-    to_inactive = sto_afip_code_set - rem_afip_code_set 
+    to_inactive = sto_afip_code_set - rem_afip_code_set
     if to_inactive:
         model_ids = model_obj.search(cr, uid, [('afip_code','in',list(to_inactive))])
         model_obj.write(cr, uid, model_ids, {'active':False})
@@ -102,7 +83,7 @@ class wsafip_server(osv.osv):
             # Ignore servers without code WSFE.
             if srv.code != 'wsfe': continue
 
-            conn = conn_obj.browse(cr, uid, conn_id, context=context) 
+            conn = conn_obj.browse(cr, uid, conn_id, context=context)
             conn.login() # Login if nescesary.
 
             try:
@@ -132,7 +113,7 @@ class wsafip_server(osv.osv):
             if srv.code != 'wsfe': continue
 
             # Take the connection, continue if connected or clockshifted
-            conn = conn_obj.browse(cr, uid, conn_id, context=context) 
+            conn = conn_obj.browse(cr, uid, conn_id, context=context)
             conn.login() # Login if nescesary.
             if conn.state not in  [ 'connected', 'clockshifted' ]: continue
 
@@ -178,7 +159,7 @@ class wsafip_server(osv.osv):
             if srv.code != 'wsfe': continue
 
             # Take the connection, continue if connected or clockshifted
-            conn = conn_obj.browse(cr, uid, conn_id, context=context) 
+            conn = conn_obj.browse(cr, uid, conn_id, context=context)
             conn.login() # Login if nescesary.
             if conn.state not in  [ 'connected', 'clockshifted' ]: continue
 
@@ -222,7 +203,7 @@ class wsafip_server(osv.osv):
             if srv.code != 'wsfe': continue
 
             # Take the connection, continue if connected or clockshifted
-            conn = conn_obj.browse(cr, uid, conn_id, context=context) 
+            conn = conn_obj.browse(cr, uid, conn_id, context=context)
             conn.login() # Login if nescesary.
             if conn.state not in  [ 'connected', 'clockshifted' ]: continue
 
@@ -252,7 +233,7 @@ class wsafip_server(osv.osv):
                    )
 
         return True
- 
+
     def wsfe_update_optional_types(self, cr, uid, ids, conn_id, context=None):
         """
         Update optional types. This function must be called from connection model.
@@ -266,7 +247,7 @@ class wsafip_server(osv.osv):
             if srv.code != 'wsfe': continue
 
             # Take the connection, continue if connected or clockshifted
-            conn = conn_obj.browse(cr, uid, conn_id, context=context) 
+            conn = conn_obj.browse(cr, uid, conn_id, context=context)
             conn.login() # Login if nescesary.
             if conn.state not in  [ 'connected', 'clockshifted' ]: continue
 
@@ -294,12 +275,12 @@ class wsafip_server(osv.osv):
                     domain=[]
                    )
         return True
- 
+
     def wsfe_update_currency(self, cr, uid, ids, conn_id, context=None):
         """
         Update currency. This function must be called from connection model.
 
-        AFIP Description: Recuperador de valores referenciales de códigos de Tipos de Monedas (FEParamGetTiposMonedas) 
+        AFIP Description: Recuperador de valores referenciales de códigos de Tipos de Monedas (FEParamGetTiposMonedas)
         """
         conn_obj = self.pool.get('wsafip.connection')
 
@@ -308,7 +289,7 @@ class wsafip_server(osv.osv):
             if srv.code != 'wsfe': continue
 
             # Take the connection, continue if connected or clockshifted
-            conn = conn_obj.browse(cr, uid, conn_id, context=context) 
+            conn = conn_obj.browse(cr, uid, conn_id, context=context)
             conn.login() # Login if nescesary.
             if conn.state not in  [ 'connected', 'clockshifted' ]: continue
 
@@ -350,7 +331,7 @@ class wsafip_server(osv.osv):
             if srv.code != 'wsfe': continue
 
             # Take the connection, continue if connected or clockshifted
-            conn = conn_obj.browse(cr, uid, conn_id, context=context) 
+            conn = conn_obj.browse(cr, uid, conn_id, context=context)
             conn.login() # Login if nescesary.
             if conn.state not in  [ 'connected', 'clockshifted' ]: continue
 
@@ -385,7 +366,7 @@ class wsafip_server(osv.osv):
                 else:
                     raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return: %s') % e)
-                   
+
             except Exception as e:
                 _logger.error('AFIP Web service error!: (%i) %s' % (e[0], e[1]))
                 raise osv.except_osv(_(u'AFIP Web service error'),
@@ -418,7 +399,7 @@ class wsafip_server(osv.osv):
             if srv.code != 'wsfe': continue
 
             # Take the connection
-            conn = conn_obj.browse(cr, uid, conn_id, context=context) 
+            conn = conn_obj.browse(cr, uid, conn_id, context=context)
             conn.login() # Login if nescesary.
             if conn.state not in  [ 'connected', 'clockshifted' ]:
                 r[srv.id] = False
@@ -460,7 +441,7 @@ class wsafip_server(osv.osv):
             if srv.code != 'wsfe': continue
 
             # Take the connection
-            conn = conn_obj.browse(cr, uid, conn_id, context=context) 
+            conn = conn_obj.browse(cr, uid, conn_id, context=context)
             conn.login() # Login if nescesary.
             if conn.state not in  [ 'connected', 'clockshifted' ]: continue
 
@@ -544,7 +525,7 @@ class wsafip_server(osv.osv):
             if srv.code != 'wsfe': continue
 
             # Take the connection
-            conn = conn_obj.browse(cr, uid, conn_id, context=context) 
+            conn = conn_obj.browse(cr, uid, conn_id, context=context)
             conn.login() # Login if nescesary.
 
             try:
@@ -570,7 +551,7 @@ class wsafip_server(osv.osv):
                     _logger.error('AFIP Web service error!: (%i) %s' % (e.Code, e.Msg))
                 r[srv.id] = False
             else:
-                r[srv.id] = { 
+                r[srv.id] = {
                     'Concepto': response.ResultGet.Concepto,
                     'DocTipo': response.ResultGet.DocTipo,
                     'DocNro': response.ResultGet.DocNro,
