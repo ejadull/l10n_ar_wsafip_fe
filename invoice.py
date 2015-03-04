@@ -114,7 +114,7 @@ class invoice(osv.osv):
                         'Id': tax.tax_code_id.parent_afip_code,
                         'Desc': tax.tax_code_id.name,
                         'BaseImp': tax.base_amount,
-                        'Alic': tax.tax_amount / tax.base_amount,
+                        'Alic': (tax.tax_amount / tax.base_amount),
                         'Importe': tax.tax_amount,
                     })
                 else:
@@ -141,10 +141,10 @@ class invoice(osv.osv):
                     'Importe': tax.tax_amount,
                 })
 
-        return r[ids] if isinstance(ids, (long, int)) else r
+        return r[ids] if isinstance(ids, int) else r
 
     def get_optionals(self, cr, uid, ids, *args):
-        opt_type_obj = self.pool.get('afip.optional_type')
+        opt_type_obj = self.pool.get('afip.opt_type')
 
         r = {}
         _ids = [ids] if isinstance(ids, int) else ids
@@ -267,18 +267,19 @@ class invoice(osv.osv):
                 'MonId': inv.currency_id.afip_code,
                 'MonCotiz': currency_obj.compute(
                     cr, uid,
-                    inv.currency_id.id,
-                    inv.company_id.currency_id.id, 1.),
-                'CbtesAsoc': {'CbteAsoc':
-                              [c for c in
-                               self.get_related_invoices(cr, uid, inv.id)]},
-                'Tributos': {'Tributo':
-                             [t for t in self.get_taxes(cr, uid, inv.id)]},
-                'Iva': {'AlicIva':
-                        [a for a in self.get_vat(cr, uid, inv.id)]},
-                'Opcionales': {'Opcional':
-                               [o
-                                for o in self.get_optionals(cr, uid, inv.id)]},
+                    inv.currency_id.id, inv.company_id.currency_id.id, 1.),
+                'CbtesAsoc': [
+                    {'CbteAsoc': c}
+                    for c in self.get_related_invoices(cr, uid, inv.id)],
+                'Tributos': [
+                    {'Tributo': t}
+                    for t in self.get_taxes(cr, uid, inv.id)],
+                'Iva': [
+                    {'AlicIva': a}
+                    for a in self.get_vat(cr, uid, inv.id)],
+                'Opcionales': [
+                    {'Opcional': o}
+                    for o in self.get_optionals(cr, uid, inv.id)],
             }.iteritems() if v is not None)
             Inv2id[invoice_number] = inv.id
 
