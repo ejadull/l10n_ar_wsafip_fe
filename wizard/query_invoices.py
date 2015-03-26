@@ -175,7 +175,7 @@ class query_invoices(osv.osv_memory):
 
         return {
             'name': _('Invoices'),
-            'domain': [('id', 'in', inv_ids)],
+            'domain': [('id', 'in', v_r)],
             'res_model': 'account.invoice',
             'type': 'ir.actions.act_window',
             'view_id': False,
