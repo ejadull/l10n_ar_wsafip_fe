@@ -659,6 +659,13 @@ class wsafip_server(osv.osv):
                     'FchProceso': response.ResultGet.FchProceso,
                     'PtoVta': response.ResultGet.PtoVta,
                     'CbteTipo': response.ResultGet.CbteTipo,
+                    'Iva': [
+                        {'Id': item.Id,
+                         'BaseImp': item.BaseImp,
+                         'Importe': item.Importe}
+                        for tag, iva in response.ResultGet.Iva
+                        for item in iva
+                    ],
                 }
 
         return r

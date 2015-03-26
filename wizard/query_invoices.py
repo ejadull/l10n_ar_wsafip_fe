@@ -37,6 +37,10 @@ class query_invoices(osv.osv_memory):
             _update_domain, string="Update relation"),
         'create_invoices': fields.boolean(
             'Create invoice in draft if not exists'),
+        'default_product_id': fields.many2one('product.product',
+                                              'Default product'),
+        'default_service_id': fields.many2one('product.product',
+                                              'Default service'),
     }
     _defaults = {
         'first_invoice_number': 1,
@@ -62,8 +66,10 @@ class query_invoices(osv.osv_memory):
     def execute(self, cr, uid, ids, context=None):
         context = context or {}
         invoice_obj = self.pool.get('account.invoice')
+        invoice_line_obj = self.pool.get('account.invoice.line')
         partner_obj = self.pool.get('res.partner')
         document_type_obj = self.pool.get('afip.document_type')
+        tax_obj=self.pool.get('account.tax')
         v_r = []
 
         for qi in self.browse(cr, uid, ids):
@@ -200,6 +206,28 @@ class query_invoices(osv.osv_memory):
                             'amount_total': r['ImpTotal'],
                             'state': 'draft',
                         })
+                        for iva in r['Iva']:
+                            tax_id = tax_obj.search(cr, uid, [
+                                ('tax_code_id.afip_code','=',iva['Id']),
+                                ('type_tax_use','=','sale')
+                            ])
+                            line_vals=invoice_line_obj.product_id_change(
+                                cr, uid, False,
+                                qi.default_product_id.id
+                                if r['Concepto'] == 1
+                                else qi.default_service_id.id,
+                                False,
+                                qty=1,
+                                name=_('AFIP declaration'),
+                                type='out_invoice',
+                                price_unit=iva['BaseImp'],
+                                partner_id=partner_id,
+                            )
+                            line_vals['value']['invoice_id']=inv_id
+                            line_vals['value']['tax_id']=(6,0,tax_id)
+                            line_vals['value']['price_unit']=iva['BaseImp']
+                            invoice_line_obj.create(cr, uid, line_vals['value'])
+
                         msg = 'Created from AFIP (%s)' % (
                             number_format % inv_number)
                         invoice_obj.message_post(
