@@ -59,7 +59,7 @@ class query_invoices(osv.osv_memory):
         if journal_id:
             num_items = journal_obj.browse(cr, uid, journal_id).afip_items_generated
             res['value'] = {
-                'first_invoice_number': min(first_invoice_number, num_items), 
+                'first_invoice_number': min(first_invoice_number, num_items),
                 'last_invoice_number': num_items,
             }
 
@@ -175,7 +175,7 @@ class query_invoices(osv.osv_memory):
 
         return {
             'name': _('Invoices'),
-            'domain': [('id', 'in', _ids)],
+            'domain': [('id', 'in', inv_ids)],
             'res_model': 'account.invoice',
             'type': 'ir.actions.act_window',
             'view_id': False,
