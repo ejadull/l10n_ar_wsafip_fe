@@ -549,7 +549,7 @@ class wsafip_server(osv.osv):
                     for req in invoice_request.itervalues()], }]
 
             common_error = [
-                (err.Code, unicode(e.Msg)) for err in response.Errors[0]
+                (err.Code, unicode(err.Msg)) for err in response.Errors[0]
             ] if hasattr(response, 'Errors') else []
             _logger.error('Request error: %s' % (common_error,))
 
