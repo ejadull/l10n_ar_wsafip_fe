@@ -175,7 +175,7 @@ class query_invoices(osv.osv_memory):
                             assert len(document_type_id) == 1
                             document_type_id = document_type_id[0]
                             partner_id = partner_obj.create(cr, uid, {
-                                'name': r['DocNro'],
+                                'name': '%s' % r['DocNro'],
                                 'document_type_id': document_type_id,
                                 'document_number': r['DocNro'],
                             })
