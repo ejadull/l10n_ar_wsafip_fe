@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from openerp.osv import fields, osv, registry
+from openerp.osv import fields, osv
+from openerp import registry
 from openerp.tools.translate import _
 import re
 import logging

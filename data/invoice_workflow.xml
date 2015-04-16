@@ -26,7 +26,7 @@ action_date_assign()
 action_move_create()
 action_number()
 action_retrieve_cae()
-write({'state':'open'})</field>
+invoice_validate()</field>
             <field name="kind">function</field>
         </record>
         <record id="account.t4" model="workflow.transition">
