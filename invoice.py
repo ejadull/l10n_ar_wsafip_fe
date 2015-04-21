@@ -49,20 +49,20 @@ class invoice(osv.osv):
         invoices = {}
         for inv in self.browse(cr, uid, ids):
             conn = inv.journal_id.afip_connection_id
-            if not conn:
-                continue
-            if inv.journal_id.afip_items_generated + 1 != \
-                    inv.journal_id.sequence_id.number_next:
-                raise osv.except_osv(
-                    _(u'Syncronization Error'),
-                    _(u'La AFIP espera que el próximo número de secuencia sea '
-                      u'%i, pero el sistema indica que será %i. '
-                      u'Hable inmediatamente con su administrador del '
-                      u'sistema para resolver este problema.') %
-                    (inv.journal_id.afip_items_generated + 1,
-                     inv.journal_id.sequence_id.number_next))
-            conns.append(conn)
-            invoices[conn.id] = invoices.get(conn.id, []) + [inv.id]
+            if conn:
+                if inv.journal_id.afip_items_generated + 1 != \
+                        inv.journal_id.sequence_id.number_next:
+                    raise osv.except_osv(
+                        _(u'Syncronization Error in Journal %s') %
+                        (inv.journal_id.name),
+                        _(u'La AFIP espera que el próximo número de secuencia sea '
+                        u'%i, pero el sistema indica que será %i. '
+                        u'Hable inmediatamente con su administrador del '
+                        u'sistema para resolver este problema.') %
+                        (inv.journal_id.afip_items_generated + 1,
+                        inv.journal_id.sequence_id.number_next))
+                conns.append(conn)
+                invoices[conn.id] = invoices.get(conn.id, []) + [inv.id]
 
         for conn in conns:
             prefix = conn.batch_sequence_id.prefix or ''
