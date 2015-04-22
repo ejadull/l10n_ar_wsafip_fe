@@ -223,7 +223,7 @@ class invoice(osv.osv):
             assert inv.currency_id.afip_code, \
                 'Must defined afip_code for the currency.'
 
-            Requests[conn.id][inv.id] = self._new_requst(
+            Requests[conn.id][inv.id] = self._new_request(
                 cr, uid, inv, journal, invoice_number)
             Inv2id[invoice_number] = inv.id
             Inv2number[invoice_number] = inv.number
