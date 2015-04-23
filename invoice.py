@@ -291,7 +291,8 @@ class invoice(osv.osv):
                            [o for o in self.get_optionals(cr, uid, inv.id)]},
         })
 
-    def _save_cae(self, cr, uid, Inv2id, Inv2number, Requests):
+    def _save_cae(self, cr, uid, Inv2id, Inv2number, Requests,
+                  use_new_cursor=False):
         """
         Store and invoice_number in cae in database using new cursor.
         @param self: the invoice object.
@@ -299,17 +300,21 @@ class invoice(osv.osv):
         @param uid: The current user ID for security checks.
         @param Inv2id: Map of ids from invoice number.
         @param Inv2number: Map of odoo invoice number from invoice number.
+        @param use_new_cursor: Set true to assign new cursor to commit changes.
+                               This not working now, because the main cursor
+                               lock the new.
         """
         conn_obj = self.pool.get('wsafip.connection')
         serv_obj = self.pool.get('wsafip.server')
 
+        msg = False
         for c_id, req in Requests.iteritems():
-            conn = conn_obj.browse(cr, uid, c_id)
-            res = serv_obj.wsfe_get_cae(cr, uid, [conn.server_id.id], c_id, req)
-            for k, v in res.iteritems():
-                if 'CAE' in v:
-                    try:
-                        _cr_ = registry(cr.dbname).cursor()
+            try:
+                _cr_ = registry(cr.dbname).cursor() if use_new_cursor else cr
+                conn = conn_obj.browse(_cr_, uid, c_id)
+                res = conn.server_id.wsfe_get_cae(c_id, req)
+                for k, v in res.iteritems():
+                    if 'CAE' in v:
                         inv_id = Inv2id[k]
                         inv_number = Inv2number[k]
                         self.write(_cr_, uid, inv_id, {
@@ -317,20 +322,29 @@ class invoice(osv.osv):
                             'afip_cae_due': v['CAEFchVto'],
                             'internal_number': inv_number,
                         })
-                        _cr_.commit()
-                    finally:
-                        try:
-                            _cr_.close()
-                        except Exception:
-                            pass
-                else:
-                    # Muestra un mensaje de error por la factura con error.
-                    # Se cancelan todas las facturas del batch!
-                    msg = 'Factura %s:\n' % k + '\n'.join(
-                        [u'(%s) %s\n' % e for e in v['Errores']] +
-                        [u'(%s) %s\n' % e for e in v['Observaciones']]
-                    )
-                    raise osv.except_osv(_(u'AFIP Validation Error'), msg)
+                    else:
+                        # Muestra un mensaje de error por la factura con error.
+                        # Se cancelan todas las facturas del batch!
+                        msg = 'Factura %s:\n' % k + '\n'.join(
+                            [u'(%s) %s\n' % e for e in v['Errores']] +
+                            [u'(%s) %s\n' % e for e in v['Observaciones']]
+                        ) + '\n'
+                if use_new_cursor:
+                    _cr_.commit()
+            except e:
+                _logger.error("Error: %s" % e)
+                if use_new_cursor:
+                    _cr_.rollback()
+            finally:
+                if use_new_cursor:
+                    try:
+                        _cr_.close()
+                    except Exception:
+                        pass
+
+        if msg:
+            # TODO: Reenviar a las facturas que no pudieron ser validadas.
+            raise osv.except_osv(_(u'AFIP Validation Error'), msg)
 
         return True
 
