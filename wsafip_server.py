@@ -549,7 +549,7 @@ class wsafip_server(osv.osv):
                     for req in invoice_request.itervalues()], }]
 
             common_error = [
-                (err.Code, unicode(e.Msg)) for err in response.Errors[0]
+                (err.Code, unicode(err.Msg)) for err in response.Errors[0]
             ] if hasattr(response, 'Errors') else []
             _logger.error('Request error: %s' % (common_error,))
 
@@ -659,6 +659,13 @@ class wsafip_server(osv.osv):
                     'FchProceso': response.ResultGet.FchProceso,
                     'PtoVta': response.ResultGet.PtoVta,
                     'CbteTipo': response.ResultGet.CbteTipo,
+                    'Iva': [
+                        {'Id': item.Id,
+                         'BaseImp': item.BaseImp,
+                         'Importe': item.Importe}
+                        for tag, iva in response.ResultGet.Iva
+                        for item in iva
+                    ],
                 }
 
         return r
