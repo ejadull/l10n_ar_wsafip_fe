@@ -55,12 +55,12 @@ class invoice(osv.osv):
                     raise osv.except_osv(
                         _(u'Syncronization Error in Journal %s') %
                         (inv.journal_id.name),
-                        _(u'La AFIP espera que el próximo número de secuencia sea '
-                        u'%i, pero el sistema indica que será %i. '
-                        u'Hable inmediatamente con su administrador del '
-                        u'sistema para resolver este problema.') %
-                        (inv.journal_id.afip_items_generated + 1,
-                        inv.journal_id.sequence_id.number_next))
+                        _('La AFIP espera que el próximo número de secuencia'
+                          ' sea %i, pero el sistema indica que será %i. '
+                          'Hable inmediatamente con su administrador del '
+                          'sistema para resolver este problema.'
+                          ) % (inv.journal_id.afip_items_generated + 1,
+                               inv.journal_id.sequence_id.number_next))
                 conns.append(conn)
                 invoices[conn.id] = invoices.get(conn.id, []) + [inv.id]
 
@@ -305,7 +305,6 @@ class invoice(osv.osv):
                                lock the new.
         """
         conn_obj = self.pool.get('wsafip.connection')
-        serv_obj = self.pool.get('wsafip.server')
 
         msg = False
         for c_id, req in Requests.iteritems():
