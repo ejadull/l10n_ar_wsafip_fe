@@ -5,7 +5,6 @@ import httplib
 import ssl
 import logging
 from suds.transport.http import HttpTransport
-from sslhttps import HTTPSConnectionSSLVersion
 
 _logger = logging.getLogger(__name__)
 
@@ -20,7 +19,7 @@ class HTTPSConnection(httplib.HTTPConnection):
                      source_address=None, ssl_version=ssl.PROTOCOL_TLSv1):
             # Fix error for python 2.6
             try:
-                super(HTTPSConnectionSSLVersion, self).__init__(
+                super(HTTPSConnection, self).__init__(
                     host, port, strict, timeout, source_address)
             except:
                 httplib.HTTPConnection.__init__(
