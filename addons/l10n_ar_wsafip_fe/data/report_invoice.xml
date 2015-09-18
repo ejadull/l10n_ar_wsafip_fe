@@ -116,7 +116,7 @@ width: inherit;
                   </div>
             </div>
         </div>
-        <t t-set="declare_vat" t-value="o.journal_id.journal_class_id.document_class_id.name in 'A'"/>
+        <t t-set="declare_vat" t-value="o.journal_id.journal_class_id.document_class_id.name and o.journal_id.journal_class_id.document_class_id.name in 'A'"/>
         <table class="table table-condensed">
             <thead>
                 <tr>

@@ -508,7 +508,6 @@ class wsafip_server(osv.osv):
             _logger.debug('Request: %s' % invoice_request)
 
             auth = conn.get_auth()
-            import pdb; pdb.set_trace()
             try:
                 srvclient = Client(srv.url+'?WSDL', transport=HttpsTransport())
                 first = 0
@@ -534,7 +533,6 @@ class wsafip_server(osv.osv):
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error: %s') % e[0])
             except Exception as e:
-                import pdb; pdb.set_trace()
                 _logger.error('AFIP Web service error!: (%i) %s' % (e[0], e[1]))
                 raise osv.except_osv(_(u'AFIP Web service error'),
                                      _(u'System return error %i: %s') %
@@ -553,7 +551,8 @@ class wsafip_server(osv.osv):
             common_error = [
                 (err.Code, unicode(err.Msg)) for err in response.Errors[0]
             ] if hasattr(response, 'Errors') else []
-            _logger.error('Request error: %s' % (common_error,))
+            if (common_error):
+                _logger.error('Request error: %s' % (common_error,))
 
             if not hasattr(response, 'FeDetResp'):
                 raise osv.except_osv(_(u'AFIP error'),

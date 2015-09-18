@@ -4,11 +4,17 @@ from openerp.exceptions import ValidationError
 import datetime as dt
 import re
 import logging
+from openerp.tools import DEFAULT_SERVER_DATE_FORMAT as DATE_FORMAT
+
 
 _logger = logging.getLogger(__name__)
 
 # Label filter to recover invoice number
 re_label = re.compile(r'%\([^\)]+\)s')
+
+
+def _conv_date(d, f="%Y%m%d"):
+    return dt.datetime.strptime(d, f).date().strftime(DATE_FORMAT)
 
 
 def _get_parents(child, parents=[]):
@@ -177,13 +183,10 @@ class account_invoice(models.Model):
         req = self._new_request(journal, invoice_number)
         res = conn.server_id.wsfe_get_cae(conn.id, [req])
 
-        import pdb; pdb.set_trace()
-
         for k, v in res.iteritems():
             if 'CAE' in v:
                 self.afip_cae = v['CAE']
-                self.afip_cae_due = dt.datetime.strptime(v['CAEFchVto'],
-                                                         "%Y%m%d").date(),
+                self.afip_cae_due = _conv_date(v['CAEFchVto'])
                 self.internal_number = invoice_number
             else:
                 raise ValidationError(
@@ -206,7 +209,12 @@ class account_invoice(models.Model):
             return 'IVA' not in _get_parents(t.tax_code_id)
 
         def _remove_nones(d):
-            return {k: v for k, v in d.iteritems() if v is not None}
+            if (hasattr(d, 'iteritems')):
+                return {k: _remove_nones(v)
+                        for k, v in d.iteritems()
+                        if _remove_nones(v) not in [None, {}]}
+            else:
+                return d
 
         inv = self
 
