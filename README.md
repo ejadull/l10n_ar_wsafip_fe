@@ -2,5 +2,5 @@
 
 # Instalación
 
-![Diagrama de Descición](img/fe-001.png)
+![Diagrama de Descición](img/fe001.png)
 
